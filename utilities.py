@@ -2,7 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import brian2 as b2
 from scipy import interpolate
-import random as rand
+import random as rand   
+
+
 
 # Math functions
 def plotFICurve(iAmpList, model = "HH", end = 270.0, Istart= 10.0, Iend = 260.0, Iamp = 8.0):
