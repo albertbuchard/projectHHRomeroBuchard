@@ -1,15 +1,12 @@
-# General utilities
-
-
 # Project utilities
 from utilities import *
 
 # Neuron Simulation Step Current
-Istart =10.
+Istart =100.
 Iend =1000.
 end=Iend + 50.
 Iamp = 8.
-HHNeuronSim = HH_Step(I_tstart=Istart, I_tend=Iend, I_amp=Iamp, tend=end, do_plot=True, model='Adapt')
+HHNeuronSim = HH_Step(I_tstart=Istart, I_tend=Iend, I_amp=Iamp, tend=end, do_plot=True, model='HH')
 
 # Get the voltage curve
 voltageValues = HHNeuronSim.vm[0]/b2.mV
@@ -33,27 +30,23 @@ for xTurningPoint in turningPoints:
     plt.plot((xTurningPoint, xTurningPoint),
              (voltageFunction(xTurningPoint) - (voltageFunction.sd * 4),
               voltageFunction(xTurningPoint) + (voltageFunction.sd * 4)), 'k-')
-plt.show()
+plt.draw()
 
 # Frequency with respect to time
-windowedFrequency = slideCompute(voltageFunction.rangeX, turningPoints, windowSize=0.02, step=0.02)
+windowedFrequency = slideCompute(voltageFunction.rangeX, turningPoints, windowSize=0.05, step=0.05)
 plt.figure()
-plt.plot(windowedFrequency[0], windowedFrequency[2])
-plt.show()
+plt.plot(windowedFrequency[0],windowedFrequency[2])
+plt.title("Evolution of frequency in time for HH model without adaptation")
+plt.xlabel('t (ms)')
+plt.ylabel('f (Hz)')
+plt.subplot(111).spines['right'].set_color((.8, .8, .8))
+plt.subplot(111).spines['top'].set_color((.8, .8, .8))
+plt.draw()
 
 HHNeuronSim = None
 
 # FI Curve
-plotFICurve(np.arange(0, 40., 0.02), Iend=1000)
+plotFICurve(np.arange(0, 40., 5), Iend=1000, model="HH")
 
-# #Computation of Turning points
-# voltageValues = HHNeuronSim.vm[0]/b2.mV
-# sizeX = len(voltageValues)
-# xvals = np.linspace(0,sizeX,sizeX)
-#
-# # convert voltage values to a MathFunction object - using spline smoothing
-# voltageFunction = pu.MathFunction(voltageValues,"spline",)
-#
-# # find the extremum with some constraints on the voltage and convexity of the second derivative
-# turningPoints = voltageFunction.FindExtremumInRange(errorValue=voltageFunction.mean/1000, espaceDistance=5, convexity=-1, yThreshold=voltageFunction.mean+40)
-# [windowPositions,numberOfEventsForWindows,frequencyForWindows ]=pu.slideCompute (xRange=[0 ,sizeX], events=turningPoints, step = 100, window = 100, fixedPointOfWindow = "middle")
+plt.show()
+

@@ -1,9 +1,9 @@
+# General utilities
 import numpy as np
 import matplotlib.pyplot as plt
 import brian2 as b2
 from scipy import interpolate
 import random as rand   
-
 
 
 # Math functions
@@ -35,9 +35,22 @@ def plotFICurve(iAmpList, model = "HH", end = 270.0, Istart= 10.0, Iend = 260.0,
         # store average frequency
         frequencyList.append(len(turningPoints) / windowSize)
 
+    plotTitle = "FI Curve for HH model without adaptation"
+    if model == "adapt":
+        plotTitle = "FI Curve for HH model with adaptation"
+    elif model == "adaptSlowK":
+        plotTitle = "FI Curve for HH model with adaptation using a slow K channel"
+    elif model == "adaptSlowKCalcium":
+        plotTitle = "FI Curve for HH model with adaptation using a slow K channel and a Calcium gated K channel"
+
     plt.figure()
-    plt.plot(iAmpList, frequencyList)
-    plt.show()
+    plt.plot(iAmpList, frequencyList, ls='dashed',lw=1,color='black')
+    plt.title(plotTitle)
+    plt.xlabel('I (uA)')
+    plt.ylabel('f (Hz)')
+    plt.subplot(111).spines['right'].set_color((.8, .8, .8))
+    plt.subplot(111).spines['top'].set_color((.8, .8, .8))
+    plt.draw()
 
 def slideCompute (xRange, events, step = None, windowSize = 99, fixedPointOfWindow = "middle") :
 
