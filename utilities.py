@@ -36,12 +36,12 @@ def plotFICurve(iAmpList, model = "HH", end = 270.0, Istart= 10.0, Iend = 260.0,
         frequencyList.append(len(turningPoints) / windowSize)
 
     plotTitle = "FI Curve for HH model without adaptation"
-    if model == "adapt":
-        plotTitle = "FI Curve for HH model with adaptation"
-    elif model == "adaptSlowK":
-        plotTitle = "FI Curve for HH model with adaptation using a slow K channel"
-    elif model == "adaptSlowKCalcium":
-        plotTitle = "FI Curve for HH model with adaptation using a slow K channel and a Calcium gated K channel"
+    if model == "Monly":
+        plotTitle = "FI Curve for HH model with adaptation using a M type channel"
+    elif model == "MandAHP":
+        plotTitle = "FI Curve for HH model with adaptation using M and AHP type channels"
+    elif model == "MAHPandCa":
+        plotTitle = "FI Curve for HH model with adaptation using M, AHP and Ca channels"
 
     plt.figure()
     plt.plot(iAmpList, frequencyList, ls='dashed',lw=1,color='black')
@@ -493,7 +493,7 @@ def HH_Neuron(curr, simtime):
     b2.run(simtime)
     return rec
 
-def HH_Neuron_Adapt(curr, simtime):
+def HH_Neuron_Adapt(curr, simtime, adaptType = "Monly"):
 
     # neuron parameters
     El = (-67) * b2.mV
@@ -514,11 +514,28 @@ def HH_Neuron_Adapt(curr, simtime):
     # \+gM*w*(EM-vm)
     # + gAHP*q*(EAHP-vm) +gCa*sinf*(ECa-vm)
     # forming HH model with differential equations with additional Channels Ca, AHP, M type
-    eqs = '''
+
+    if adaptType=="Monly" :
+        print(adaptType)
+        eqs = '''
+        membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) + gl*(El-vm) + gK*n**4*(EK-vm): amp
+         '''
+    elif adaptType == "MandAHP":
+        eqs = '''
+            membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) \
+            + gAHP*q*(EAHP-vm) + gl*(El-vm) + gK*n**4*(EK-vm): amp
+             '''
+    elif adaptType == "MAHPandCa" :
+        eqs = '''
+            membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) \
+            + gAHP*q*(EAHP-vm) + gCa*sinf*(ECa-vm) \
+            + gl*(El-vm) + gK*n**4*(EK-vm): amp
+             '''
+
+
+    eqs += '''
 
     I_e = curr(t) : amp
-    membrane_Im = I_e + gNa*m**3*h*(ENa-vm)+gM*w*(EM-vm)  \
-         +gl*(El-vm) + gK*n**4*(EK-vm): amp
 
     I_Na=gNa*m**3*h*(ENa-vm) : amp
     dm/dt = alpham*(1-m)-betam*m : 1
@@ -617,14 +634,15 @@ def HH_Step(I_tstart=20, I_tend=180, I_amp=7,
                 rec,
                 title="Step current",
             )
-
-    if model == "Adapt":
-        rec = HH_Neuron_Adapt(curr, tend * b2.ms)
+    else:
+        rec = HH_Neuron_Adapt(curr, tend * b2.ms, model)
 
         if do_plot:
             plot_data_Adapt(
                 rec,
                 title="Step current",
             )
+
+
     return rec
 
