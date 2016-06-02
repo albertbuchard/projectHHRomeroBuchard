@@ -7,6 +7,52 @@ import random as rand
 
 
 # Math functions
+def plotAllFICurves(iAmpList, models = ["HH", "Monly", "AHPonly", "MandAHP"], end = 270.0, Istart= 10.0, Iend = 260.0, Iamp = 8.0):
+    # set window length to the duration of the step current, scale it to seconds
+    windowSize = (Iend - Istart) / 1000
+
+    # setup output frequency list
+    frequencyListForModel = []
+
+    # loop over the models
+    for model in models:
+
+        frequencyList = []
+        # loop over the current parameters
+        for iAmp in iAmpList:
+            # Do the ramp and get the voltage and time points
+            neuron = None
+            neuron = HH_Step(I_amp=iAmp, I_tstart=Istart, I_tend=Iend, tend=end, do_plot=False, model=model)
+
+            voltageValues = neuron.vm[0]
+            xvals = list(neuron.t)
+
+            # convert voltage values to a MathFunction object - using spline smoothing
+            voltageFunction = MathFunction(voltageValues, "spline", xValues=xvals)
+
+            # find the extremum with some constraints on the voltage and convexity of the second derivative
+            turningPoints = voltageFunction.FindExtremumInRange(errorValue=voltageFunction.mean / 10000,
+                                                                espaceDistance=0.0005, convexity=-1,
+                                                                yThreshold=voltageFunction.mean + voltageFunction.sd * 1.5)
+
+            # store average frequency
+            frequencyList.append(len(turningPoints) / windowSize)
+
+        frequencyListForModel.append(frequencyList)
+
+    plotTitle = "FI Curve for different neuron models"
+
+    plt.figure()
+    for index, model in enumerate(models):
+        plt.plot(iAmpList, frequencyListForModel[index], ls='dashed', lw=(index+1), color='black', label=model)
+    plt.title(plotTitle)
+    plt.xlabel('I (uA)')
+    plt.ylabel('f (Hz)')
+    plt.subplot(111).spines['right'].set_color((.8, .8, .8))
+    plt.subplot(111).spines['top'].set_color((.8, .8, .8))
+    plt.legend(loc=0)
+    plt.draw()
+
 def plotFICurve(iAmpList, model = "HH", end = 270.0, Istart= 10.0, Iend = 260.0, Iamp = 8.0):
 
     # set window length to the duration of the step current, scale it to seconds
@@ -38,10 +84,14 @@ def plotFICurve(iAmpList, model = "HH", end = 270.0, Istart= 10.0, Iend = 260.0,
     plotTitle = "FI Curve for HH model without adaptation"
     if model == "Monly":
         plotTitle = "FI Curve for HH model with adaptation using a M type channel"
+    elif model == "AHPonly":
+        plotTitle = "FI Curve for HH model with adaptation using an AHP type channel"
     elif model == "MandAHP":
         plotTitle = "FI Curve for HH model with adaptation using M and AHP type channels"
     elif model == "MAHPandCa":
         plotTitle = "FI Curve for HH model with adaptation using M, AHP and Ca channels"
+    elif model == "Caonly":
+        plotTitle = "FI Curve for HH model with adaptation Ca channels only"
 
     plt.figure()
     plt.plot(iAmpList, frequencyList, ls='dashed',lw=1,color='black')
@@ -520,6 +570,11 @@ def HH_Neuron_Adapt(curr, simtime, adaptType = "Monly"):
         eqs = '''
         membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) + gl*(El-vm) + gK*n**4*(EK-vm): amp
          '''
+    elif adaptType == "AHPonly":
+        eqs = '''
+            membrane_Im = I_e + gNa*m**3*h*(ENa-vm) \
+            + gAHP*q*(EAHP-vm) + gl*(El-vm) + gK*n**4*(EK-vm): amp
+             '''
     elif adaptType == "MandAHP":
         eqs = '''
             membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) \
@@ -529,6 +584,11 @@ def HH_Neuron_Adapt(curr, simtime, adaptType = "Monly"):
         eqs = '''
             membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gM*w*(EM-vm) \
             + gAHP*q*(EAHP-vm) + gCa*sinf*(ECa-vm) \
+            + gl*(El-vm) + gK*n**4*(EK-vm): amp
+             '''
+    elif adaptType == "Caonly":
+        eqs = '''
+            membrane_Im = I_e + gNa*m**3*h*(ENa-vm) + gCa*sinf*(ECa-vm) \
             + gl*(El-vm) + gK*n**4*(EK-vm): amp
              '''
 
@@ -642,6 +702,42 @@ def HH_Step(I_tstart=20, I_tend=180, I_amp=7,
                 rec,
                 title="Step current",
             )
+
+
+    return rec
+
+
+def HH_ExitatoryInhibitory(durationOfExperiment=1000,
+                           step=1,
+                           pExitatory =.4,
+                           pInhibitory=.2,
+                           iExitatory = 5,
+                           iInhibitatory = -2,
+                           plotCurrent = False):
+
+    # create the current vector
+    timeVector = np.arange(0,durationOfExperiment,step)
+    currentVector = []
+    for i in timeVector:
+        randomP = rand.random()
+        addCurrent = 0
+        if randomP<pExitatory:
+            addCurrent += iExitatory
+
+        randomP = rand.random()
+        if randomP < pInhibitory:
+            addCurrent += iInhibitatory
+
+        currentVector.append(addCurrent)
+
+    currentForBrian = b2.TimedArray(currentVector * b2.uamp, dt=step * b2.ms)
+
+    rec = HH_Neuron(currentForBrian, durationOfExperiment * b2.ms)
+
+    if plotCurrent:
+        plt.figure()
+        plt.plot(currentVector)
+        plt.show()
 
 
     return rec

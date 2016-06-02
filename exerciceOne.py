@@ -35,12 +35,15 @@ plt.draw()
 # Frequency with respect to time
 windowedFrequency = slideCompute(voltageFunction.rangeX, turningPoints, windowSize=0.05, step=0.05)
 plt.figure()
-plt.plot(windowedFrequency[0],windowedFrequency[2])
 plt.title("Evolution of frequency in time for HH model without adaptation")
-plt.xlabel('t (ms)')
+plt.xlabel('t (s)')
 plt.ylabel('f (Hz)')
 plt.subplot(111).spines['right'].set_color((.8, .8, .8))
 plt.subplot(111).spines['top'].set_color((.8, .8, .8))
+fCurve, = plt.plot(windowedFrequency[0],windowedFrequency[2])
+stimLine, = plt.plot([Istart/1000, Iend/1000], [np.amax(windowedFrequency[2])*1.15, np.amax(windowedFrequency[2])*1.15], 'k-', lw=2)
+plt.legend([fCurve, stimLine], ['Spike Frequency', 'Current Step'], bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
 plt.draw()
 
 HHNeuronSim = None
