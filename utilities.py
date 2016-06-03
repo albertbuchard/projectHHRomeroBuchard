@@ -232,11 +232,14 @@ class MathFunction:
             errorValue = self.mean/10000
 
         # initialize algorithm values
-        previousDy = self(self.xValues[0],1)
+        # we keep out the loop the last first derivative, the last X,
+        # the output turning points detected and the current turning point being test over the escapeDistance
+        previousDy = None
         turningPoints = []
         currentTurningPoint = None
-
         previousX = xRange[0]
+
+        # start the loop over the whole range of x values
         for x in xRange[1:]:
             # previous values
             previousY = self(previousX, 0)
@@ -248,15 +251,22 @@ class MathFunction:
             dy = self(x, 1)
             ddy = self(x,2)
 
-
+            # Check if a turning point is currently being tested
             if currentTurningPoint != None:
-                # If a turning point is detected wait until a certain escapeDistance
+                # If a turning point has been detected wait until a certain escapeDistance
+                # without any other turning point before recording it
+                # this prevent oscilation close to zero in the first derivative to count as several turning points
                 if (x - currentTurningPoint) > espaceDistance:
                     print("Added turning point at " + str(currentTurningPoint))
                     turningPoints.append(currentTurningPoint)
                     currentTurningPoint = None
 
-            #check if first derivation passes through 0 defining a turning point of the function
+            # check if the current point is a turning point (first derivative is zero),
+            # two condition are possibly met :
+            # If sign of first derivative changed since last iteration
+            # the first derivative being a continuous function passed through 0
+            # Or if the derivative is close enough to zero to be approximated at zero depending on the
+            # argument errorValue
             if (np.sign(dy)!=np.sign(previousDY))or(np.abs(dy)<=errorValue):
                 # check if a turning point is currently being checked
                 if currentTurningPoint != None:
